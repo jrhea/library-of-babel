@@ -4,7 +4,6 @@ This is an attempt at a faithful client-side recreation of [libraryofbabel.info]
 
 You are free to steal this code.
 
----
 
 ## Features
 
@@ -13,16 +12,26 @@ You are free to steal this code.
 - Copy hex and share a link — includes full reproducibility  
 - Fully static — deploy anywhere (GitHub Pages, IPFS, localhost)
 
----
-
 ## Usage
 
-1. Navigate to the [site](https://jrhea.github.io/library-of-babel) or clone the repo.
-3. Use the **Search** box to find a snippet in the library.  
-4. Copy the **Hexagon** or use **Copy Link** to share the exact location.  
-5. Paste a hex into **Browse** to reconstruct a page from coordinates.
+Explore the Library in two ways:
 
----
+Search
+
+- Go to search.html
+
+- Enter any text (up to 3200 characters)
+
+-	You’ll get:
+    -	A hexagon address
+    -	Coordinates (wall, shelf, volume, page)
+    -	A full 3200-character page with your text embedded
+    -	A link you can share or revisit later
+
+Browse
+-	Go to browse.html
+-	Enter a hexagon and coordinates
+-	The exact same page will be regenerated
 
 ## Link Format
 
@@ -31,7 +40,6 @@ All shared links use URL fragments (`#`) to support large hex values:
 ```
 https://jrhea.github.io/library-of-babel/#hex=...&wall=0&shelf=1&volume=2&page=3
 ```
----
 
 ## How It Works
 
@@ -41,7 +49,6 @@ https://jrhea.github.io/library-of-babel/#hex=...&wall=0&shelf=1&volume=2&page=3
 - Position (wall/shelf/volume/page) is embedded in the number and fully recoverable  
 - Searching embeds the text into deterministic pseudo-random filler at a random offset
 
----
 
 ## Credits
 
