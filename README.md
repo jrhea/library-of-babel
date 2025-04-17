@@ -14,13 +14,13 @@ You are free to steal this code.
 
 ## Usage
 
+Navigate to the [site](https://jrhea.github.io/library-of-babel)
+
 Explore the Library in two ways:
 
 Search
 
-- Go to search.html
-
-- Enter any text (up to 3200 characters)
+- Enter up to 3200 characters of text (a–z, space, comma, period)
 
 -	You’ll get:
     -	A hexagon address
@@ -29,7 +29,6 @@ Search
     -	A link you can share or revisit later
 
 Browse
--	Go to browse.html
 -	Enter a hexagon and coordinates
 -	The exact same page will be regenerated
 
