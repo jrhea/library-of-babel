@@ -9,7 +9,7 @@ You are free to steal this code.
 
 - Search for a snippet and find a page containing it  
 - Browse a specific page by entering a hex + coordinates  
-- Copy hex and share a link — includes full reproducibility  
+- Copy hex and share a link
 - Fully static — deploy anywhere (GitHub Pages, IPFS, localhost)
 
 ## Usage
