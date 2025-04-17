@@ -1,10 +1,13 @@
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz ,.";
-const BASE = 29n;
+const BASE = 29n; // Base-29: 26 letters + comma, space, and period — matches the original Library of Babel charset
 const PAGE_LENGTH = 3200n;
-const A = 6364136223846793005n;
-const C = 1n;
-const M = 2n ** 15565n;
-const POSITION_MULTIPLIER = BASE ** PAGE_LENGTH;
+
+// Multiplier used in the LCG (Linear Congruential Generator). Classic constant.
+const A = 6364136223846793005n; // Classic multiplier from Donald Knuth's MMIX LCG (The Art of Computer Programming, Volume 2)
+const C = 1n; // Common increment for full-period LCG when used with power-of-2 modulus
+const M = 2n ** 15565n; // Large modulus to ensure high entropy and non-repeating sequences
+
+const POSITION_MULTIPLIER = BASE ** PAGE_LENGTH; // Used to separate position from page content numerically
 
 function modinv(a, m) {
   let [t, newT] = [0n, 1n];
@@ -46,6 +49,7 @@ function fromBase36(s) {
   }
 }
 
+// Encode hierarchical position: wall > shelf > volume > page (420 pages per volume)
 function encodePosition(w, s, v, p) {
   return BigInt(p + v * 420 + s * 420 * 32 + w * 420 * 32 * 5);
 }
@@ -83,6 +87,7 @@ function numberToPage(n) {
   return chars.reverse();
 }
 
+// Insert snippet into a randomly chosen page at a random position and encode into hex
 function searchBabel() {
   const snippet = document.getElementById("snippet").value;
   if (!snippet || snippet.length > 3200) {
@@ -117,6 +122,7 @@ function searchBabel() {
   document.getElementById("page").innerHTML = before + highlight + after;
 }
 
+// Reverse the hex address to recover coordinates and page content
 function browseBabel() {
   try {
     const hex = document.getElementById("browseHex").value.trim();
@@ -183,6 +189,7 @@ function copyLink() {
   });
 }
 
+// Load and decode from URL hash if it contains position + hex
 function tryAutoloadFromHash() {
   if (!location.hash.startsWith("#hex=")) return;
 
@@ -205,6 +212,7 @@ function tryAutoloadFromHash() {
   }
 }
 
+// Hook up UI event listeners on DOM load
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("searchBtn").addEventListener("click", searchBabel);
   document.getElementById("browseBtn").addEventListener("click", browseBabel);
