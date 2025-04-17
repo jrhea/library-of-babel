@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Library of Babel – Search</title>
+  <style>
+    body { font-family: monospace; background: #f9f9f9; color: #222; padding: 2em; }
+    textarea, input[type="text"] { width: 100%; font-family: monospace; font-size: 14px; }
+    pre { background: #eee; padding: 1em; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    .section { margin-top: 2em; }
+    button { margin-top: 0.5em; }
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; }
+    footer { margin-top: auto; }
+  </style>
+</head>
+<body>
+  <h1>Search</h1>
+  <div class="section">
+    <textarea id="snippet" rows="3" placeholder=""></textarea><br>
+    <button id="searchBtn">Search</button>
+  </div>
+  <div class="section">
+    <h2>Hexagon</h2>
+    <pre id="hex"></pre>
+    <button id="copyHexBtn">Copy Hexagon</button>
+    <span id="copyStatus" style="margin-left: 10px; color: green; display: none;">Hexagon copied!</span>
+
+    <h2>Coordinates</h2>
+    <pre id="coords"></pre>
+
+    <button id="linkBtn">Share Page</button>
+    <span id="linkStatus" style="margin-left: 10px; color: blue; display: none;">Page link copied!</span>
+
+    <h2>Snippet Position</h2>
+    <pre id="pos"></pre>
+
+    <h2>Full Page</h2>
+    <pre id="page"></pre>
+  </div>
+
+  <script src="js/library-of-babel.js" type="module"></script>
+  <footer style="margin-top: 4em; text-align: center; font-family: monospace;">
+    <a href="index.html" style="color: #0077cc; text-decoration: none;">← Back to Home</a>
+  </footer>
+</body>
+</html>

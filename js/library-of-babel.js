@@ -152,11 +152,12 @@ function browseBabel() {
 
     document.getElementById("hex").textContent = hex;
     document.getElementById("coords").textContent = `Wall: ${wall}, Shelf: ${shelf}, Volume: ${volume}, Page: ${page}`;
-    document.getElementById("pos").textContent = "(from hex)";
-    document.getElementById("page").textContent = text.join("");
-  } catch (e) {
-    console.error("Browse failed:", e);
-  }
+    const posEl = document.getElementById("pos");
+    if (posEl) posEl.style.display = "none";
+        document.getElementById("page").textContent = text.join("");
+    } catch (e) {
+        console.error("Browse failed:", e);
+    }
 }
 
 function copyHex() {
@@ -180,7 +181,7 @@ function copyLink() {
 
   const [, wall, shelf, volume, page] = matches;
   const hash = `hex=${encodeURIComponent(hex)}&wall=${wall}&shelf=${shelf}&volume=${volume}&page=${page}`;
-  const url = `${location.origin}${location.pathname}#${hash}`;
+  const url = `${location.origin}${location.pathname.replace("search.html", "browse.html")}#${hash}`;
 
   navigator.clipboard.writeText(url).then(() => {
     const status = document.getElementById("linkStatus");
@@ -203,20 +204,35 @@ function tryAutoloadFromHash() {
   const page = parseInt(params.get("page"));
 
   if (hex && !isNaN(wall) && !isNaN(shelf) && !isNaN(volume) && !isNaN(page)) {
-    document.getElementById("browseHex").value = hex;
-    document.getElementById("browseWall").value = wall;
-    document.getElementById("browseShelf").value = shelf;
-    document.getElementById("browseVolume").value = volume;
-    document.getElementById("browsePage").value = page;
-    browseBabel();
+    const hexInput = document.getElementById("browseHex");
+    const wallInput = document.getElementById("browseWall");
+    const shelfInput = document.getElementById("browseShelf");
+    const volumeInput = document.getElementById("browseVolume");
+    const pageInput = document.getElementById("browsePage");
+    
+    if (hexInput && wallInput && shelfInput && volumeInput && pageInput) {
+      hexInput.value = hex;
+      wallInput.value = wall;
+      shelfInput.value = shelf;
+      volumeInput.value = volume;
+      pageInput.value = page;
+      browseBabel();
+    }
   }
 }
 
 // Hook up UI event listeners on DOM load
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("searchBtn").addEventListener("click", searchBabel);
-  document.getElementById("browseBtn").addEventListener("click", browseBabel);
-  document.getElementById("copyHexBtn").addEventListener("click", copyHex);
-  document.getElementById("linkBtn").addEventListener("click", copyLink);
-  tryAutoloadFromHash();
-});
+    const searchBtn = document.getElementById("searchBtn");
+    const browseBtn = document.getElementById("browseBtn");
+    const copyHexBtn = document.getElementById("copyHexBtn");
+    const linkBtn = document.getElementById("linkBtn");
+  
+    if (searchBtn) searchBtn.addEventListener("click", searchBabel);
+    if (browseBtn) browseBtn.addEventListener("click", browseBabel);
+    if (copyHexBtn) copyHexBtn.addEventListener("click", copyHex);
+    if (linkBtn) linkBtn.addEventListener("click", copyLink);
+  
+    tryAutoloadFromHash();
+    window.addEventListener("hashchange", tryAutoloadFromHash);
+  });

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Library of Babel – Browse</title>
+  <style>
+    body { font-family: monospace; background: #f9f9f9; color: #222; padding: 2em; }
+    input[type="text"] { width: 100%; font-family: monospace; font-size: 14px; }
+    input[type="number"] { width: 60px; font-family: monospace; }
+    pre { background: #eee; padding: 1em; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    .section { margin-top: 2em; }
+  </style>
+</head>
+<body>
+  <h1>Browse</h1>
+  <div class="section">
+    <label>Hexagon:</label>
+    <input id="browseHex" type="text" placeholder="" /><br><br>
+
+    <label>Wall:</label>
+    <input id="browseWall" type="number" min="0" max="3" value="0" />
+    <label>Shelf:</label>
+    <input id="browseShelf" type="number" min="0" max="4" value="0" />
+    <label>Volume:</label>
+    <input id="browseVolume" type="number" min="0" max="31" value="0" />
+    <label>Page:</label>
+    <input id="browsePage" type="number" min="0" max="419" value="0" />
+    <br><br>
+
+    <button id="browseBtn">Browse</button>
+  </div>
+
+  <div class="section">
+    <h2>Hexagon</h2>
+    <pre id="hex"></pre>
+
+    <h2>Coordinates</h2>
+    <pre id="coords"></pre>
+
+    <button id="linkBtn">Share Page</button>
+    <span id="linkStatus" style="margin-left: 10px; color: blue; display: none;">Page link copied!</span>
+
+    <h2>Full Page</h2>
+    <pre id="page"></pre>
+  </div>
+
+  <script src="js/library-of-babel.js" type="module"></script>
+</body>
+</html>
