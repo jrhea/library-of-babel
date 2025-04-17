@@ -37,9 +37,9 @@ https://jrhea.github.io/library-of-babel/#hex=...&wall=0&shelf=1&volume=2&page=3
 
 - Every page is encoded as a number in base-29  
 - A **reversible Linear Congruential Generator (LCG)** scrambles that number  
-- The result is encoded to base-36 to form the “hexagon” address  
+- The result is encoded to base-36 to form the hexagon address  
 - Position (wall/shelf/volume/page) is embedded in the number and fully recoverable  
-- Searching embeds the snippet into deterministic pseudo-random filler at a random offset
+- Searching embeds the text into deterministic pseudo-random filler at a random offset
 
 ---
 
