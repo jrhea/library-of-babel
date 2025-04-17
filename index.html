@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library of Babel</title>
+  <style>
+    body { font-family: monospace; background: #f9f9f9; color: #222; padding: 2em; }
+    textarea, input[type="text"] { width: 100%; font-family: monospace; font-size: 14px; }
+    input[type="number"] { width: 60px; font-family: monospace; }
+    pre { background: #eee; padding: 1em; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    .section { margin-top: 2em; }
+  </style>
+</head>
+<body>
+  <h1>Library of Babel</h1>
+
+  <div class="section">
+    <h2>Search</h2>
+    <textarea id="snippet"></textarea>
+    <br><br>
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <div class="section">
+    <h2>Browse</h2>
+
+    <label for="browseHex">Hexagon:</label><br>
+    <input id="browseHex" type="text" placeholder="" /><br><br>
+
+    <label>Wall:</label>
+    <input id="browseWall" type="number" min="0" max="3" value="0" />
+    <label>Shelf:</label>
+    <input id="browseShelf" type="number" min="0" max="4" value="0" />
+    <label>Volume:</label>
+    <input id="browseVolume" type="number" min="0" max="31" value="0" />
+    <label>Page:</label>
+    <input id="browsePage" type="number" min="0" max="419" value="0" />
+    <br><br>
+
+    <button id="browseBtn">Browse</button>
+  </div>
+
+  <div class="section">
+    <h2>Hexagon</h2>
+    <pre id="hex"></pre>
+    <button id="copyHexBtn">Copy Hexagon</button>
+    <span id="copyStatus" style="margin-left: 10px; color: green; display: none;">Copied!</span>
+
+    <h2>Coordinates</h2>
+    <pre id="coords"></pre>
+
+    <h2>Snippet Position</h2>
+    <pre id="pos"></pre>
+
+    <h2>Full Page</h2>
+    <pre id="page"></pre>
+  </div>
+
+  <script src="js/library-of-babel.js" type="module"></script>
+</body>
+</html>
