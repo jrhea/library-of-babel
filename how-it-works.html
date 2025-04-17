@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>How It Works – Library of Babel</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #f9f9f9;
+      color: #222;
+      padding: 2em;
+      max-width: 800px;
+      margin: auto;
+    }
+    a {
+      color: #0077cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    pre {
+      background: #eee;
+      padding: 1em;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>How It Works</h1>
+
+  <p><a href="index.html">← Back to Home</a></p>
+
+  <p>
+    The Library of Babel contains every possible 3200-character page using a 29-character alphabet
+    (a–z, space, comma, period).
+  </p>
+
+  <h2>Search</h2>
+  <p>
+    When you search for a snippet, the app embeds your text into a pseudo-random page,
+    converts the page to a large base-29 number, then adds the page’s coordinates (wall, shelf, volume, page)
+    as a positional offset. The full number is scrambled with a reversible pseudo-random generator
+    and encoded as a base-36 hexagon address.
+  </p>
+
+  <h2>Browse</h2>
+  <p>
+    When you browse with a hexagon and coordinates, the app reverses the process:
+    it decodes the hex, unscrambles it, extracts the coordinates and page content,
+    and displays the exact same 3200-character page.
+  </p>
+
+  <h2>Why It Works</h2>
+  <p>
+    The math is deterministic and reversible so every page, every address, and every snippet
+    is reproducible without needing to store anything.
+  </p>
+</body>
+</html>
