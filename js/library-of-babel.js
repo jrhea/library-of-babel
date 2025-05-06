@@ -1,14 +1,13 @@
+/* ───────────────────────── Constants ───────────────────────── */
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz ,.";
-const BASE = 29n; // Base-29: 26 letters + comma, space, and period — matches the original Library of Babel charset
-const PAGE_LENGTH = 3200n;
+const BASE          = 29n;         // 26 letters + space/comma/period
+const PAGE_LENGTH   = 3200n;
+const A = 6364136223846793005n;    // Knuth MMIX LCG
+const C = 1n;
+const M = 2n ** 15565n;            // big modulus
+const LCG_SKIP = 20;              // Number of initial LCG steps to discard for variation
 
-// Multiplier used in the LCG (Linear Congruential Generator). Classic constant.
-const A = 6364136223846793005n; // Classic multiplier from Donald Knuth's MMIX LCG (The Art of Computer Programming, Volume 2)
-const C = 1n; // Common increment for full-period LCG when used with power-of-2 modulus
-const M = 2n ** 15565n; // Large modulus to ensure high entropy and non-repeating sequences
-
-const POSITION_MULTIPLIER = BASE ** PAGE_LENGTH; // Used to separate position from page content numerically
-
+/* ─────────────────────── LCG helpers ─────────────────────── */
 function modinv(a, m) {
   let [t, newT] = [0n, 1n];
   let [r, newR] = [m, a];
@@ -19,220 +18,242 @@ function modinv(a, m) {
   }
   return t < 0n ? t + m : t;
 }
+const A_INV = modinv(A, M);
 
-function reversibleLcgScramble(n) {
-  return (A * n + C) % M;
+const scramble   = n => (A * n + C) % M;
+const unscramble = s => (A_INV * (s - C)) % M;
+
+/* ───────────────────── base‑36 helpers ───────────────────── */
+const DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz";
+const toBase36   = n => n.toString(36);
+const fromBase36 = s =>
+  [...s].reduce((acc, ch) => acc * 36n + BigInt(DIGITS.indexOf(ch)), 0n);
+
+/* ───────────────────── text ⇄ number ───────────────────── */
+function pageToNumber(pageArr) {
+  return pageArr
+    .slice().reverse()
+    .reduce((acc, ch, i) => acc + BigInt(ALPHABET.indexOf(ch)) * (BASE ** BigInt(i)), 0n);
 }
-
-function reversibleLcgUnscramble(scrambled) {
-  const A_INV = modinv(A, M);
-  return (A_INV * (scrambled - C)) % M;
-}
-
-function toBase36(n) {
-  return n.toString(36);
-}
-
-function fromBase36(s) {
-  if (!s || !/^[0-9a-z]+$/.test(s)) {
-    alert("Invalid hex address. Only lowercase letters and digits are allowed.");
-    throw new Error("Invalid base36 characters.");
-  }
-  try {
-    return [...s].reduce((acc, char) => {
-      const val = BigInt("0123456789abcdefghijklmnopqrstuvwxyz".indexOf(char));
-      return acc * 36n + val;
-    }, 0n);
-  } catch (e) {
-    alert("Could not decode hex address. Check that it's valid.");
-    throw e;
-  }
-}
-
-// Encode hierarchical position: wall > shelf > volume > page (420 pages per volume)
-function encodePosition(w, s, v, p) {
-  return BigInt(p + v * 420 + s * 420 * 32 + w * 420 * 32 * 5);
-}
-
-function decodePosition(pos) {
-  const wall = Math.floor(pos / (420 * 32 * 5));
-  const shelf = Math.floor(pos / (420 * 32)) % 5;
-  const volume = Math.floor(pos / 420) % 32;
-  const page = pos % 420;
-  return { wall, shelf, volume, page };
-}
-
-function generateGibberish(seed, length = 3200) {
-  const chars = [];
-  for (let i = 0; i < length; i++) {
-    seed = reversibleLcgScramble(seed);
-    chars.push(ALPHABET[Number(seed % BASE)]);
-  }
-  return chars;
-}
-
-function pageToNumber(page) {
-  return page.reverse().reduce((acc, ch, i) => {
-    return acc + BigInt(ALPHABET.indexOf(ch)) * (BASE ** BigInt(i));
-  }, 0n);
-}
-
 function numberToPage(n) {
-  const chars = [];
+  const out = [];
   for (let i = 0; i < 3200; i++) {
-    const r = n % BASE;
-    n = n / BASE;
-    chars.push(ALPHABET[Number(r)]);
+    const r = n % BASE; n = n / BASE;
+    out.push(ALPHABET[Number(r)]);
   }
-  return chars.reverse();
+  return out.reverse();
 }
 
-// Insert snippet into a randomly chosen page at a random position and encode into hex
+/* encode coords  -> unique integer 0 … 4*5*32*420‑1 */
+function coordsToNumber(w, s, v, p) {
+  return BigInt(
+    p + v * 420 +
+    s * 420 * 32 +
+    w * 420 * 32 * 5
+  );
+}
+
+function generateGibberish(seed, len = 3200) {
+
+  /* remove: seed = scramble(seed + BigInt(offset)); */
+  // start directly from the seed
+  for (let i = 0; i < LCG_SKIP; i++) seed = scramble(seed);
+
+  const arr = [];
+  for (let i = 0; i < len; i++) {
+    seed = scramble(seed);
+    arr.push(ALPHABET[Number(seed % BASE)]);
+  }
+  return arr;
+}
+
+/* ─────────────────── UI‑helper: render page ─────────────────── */
+function renderPage(hexOnly, wall, shelf, volume, page, pageArr) {
+  // show pure hex in the Hex field
+  document.getElementById("hex").textContent =
+    hexOnly;                                  // ← no #coords appended
+
+  // coordinate read‑out
+  document.getElementById("coords").textContent =
+    `Wall: ${wall}, Shelf: ${shelf}, Volume: ${volume}, Page: ${page}`;
+
+  // hide snippet‑pos line on Browse
+  const posEl = document.getElementById("pos");
+  if (posEl) posEl.style.display = "none";
+
+  // full 3200‑char page
+  document.getElementById("page").textContent = pageArr.join("");
+}
+
+/* ─────────────────────── Search (encode) ───────────────────── */
 function searchBabel() {
   const snippet = document.getElementById("snippet").value;
   if (!snippet || snippet.length > 3200) {
-    alert("Please enter a snippet (max 3200 characters).");
-    return;
+    alert("Please enter up to 3200 characters."); return;
   }
 
-  const w = Math.floor(Math.random() * 4);
-  const s = Math.floor(Math.random() * 5);
-  const v = Math.floor(Math.random() * 32);
-  const p = Math.floor(Math.random() * 420);
-  const insertAt = Math.floor(Math.random() * (Number(PAGE_LENGTH) - snippet.length));
+  /* random hexagon (128‑bit seed) */
+  const hexagonSeed =
+      (BigInt(crypto.getRandomValues(new Uint32Array(4))[0]) << 96n) ^
+      (BigInt(crypto.getRandomValues(new Uint32Array(4))[1]) << 64n) ^
+      (BigInt(crypto.getRandomValues(new Uint32Array(4))[2]) << 32n) ^
+       BigInt(crypto.getRandomValues(new Uint32Array(4))[3]);
 
-  const posNumber = encodePosition(w, s, v, p);
-  let filler = generateGibberish(posNumber);
+  const hex = toBase36(scramble(hexagonSeed));   // hexagon name
+
+  /* random coordinates inside that hexagon */
+  const wall   = Math.floor(Math.random() * 4);
+  const shelf  = Math.floor(Math.random() * 5);
+  const volume = Math.floor(Math.random() * 32);
+  const page   = Math.floor(Math.random() * 420);
+
+  const insertAt = Math.floor(Math.random() * (3200 - snippet.length));
+
+  /* page‑seed = hexagonSeed + coordNumber */
+  const pageSeed = hexagonSeed + coordsToNumber(wall, shelf, volume, page);
+  const filler   = generateGibberish(pageSeed, 3200);
+
   for (let i = 0; i < snippet.length; i++) {
     filler[insertAt + i] = snippet[i];
   }
 
-  const pageNum = pageToNumber([...filler]);
-  const combined = posNumber * POSITION_MULTIPLIER + pageNum;
-  const scrambled = reversibleLcgScramble(combined);
-  const hex = toBase36(scrambled);
-
-  document.getElementById("hex").textContent = hex;
-  document.getElementById("coords").textContent = `Wall: ${w}, Shelf: ${s}, Volume: ${v}, Page: ${p}`;
-  document.getElementById("pos").textContent = insertAt;
+  /* update UI */
+  document.getElementById("hex").textContent    = hex;   // pure hexagon
+  document.getElementById("coords").textContent =
+    `Wall: ${wall}, Shelf: ${shelf}, Volume: ${volume}, Page: ${page}`;
+  document.getElementById("pos").textContent    = insertAt;
 
   const before = filler.slice(0, insertAt).join("");
-  const highlight = `<span style=\"background: yellow;\">${snippet}</span>`;
-  const after = filler.slice(insertAt + snippet.length).join("");
-  document.getElementById("page").innerHTML = before + highlight + after;
+  const after  = filler.slice(insertAt + snippet.length).join("");
+  document.getElementById("page").innerHTML =
+    `${before}<span style="background:yellow;">${snippet}</span>${after}`;
 }
 
-// Reverse the hex address to recover coordinates and page content
+/* ───────────────── Browse: hexagon stays fixed; coords pick the page ───────────────── */
 function browseBabel() {
   try {
-    const hex = document.getElementById("browseHex").value.trim();
-    const wall = parseInt(document.getElementById("browseWall").value);
-    const shelf = parseInt(document.getElementById("browseShelf").value);
-    const volume = parseInt(document.getElementById("browseVolume").value);
-    const page = parseInt(document.getElementById("browsePage").value);
+    const hexField = document.getElementById("browseHex");
+    const hexPure  = hexField.value.trim();          // pure hexagon name
+    if (!hexPure) { alert("Enter a hexagon name."); return; }
 
-    if (hex.length === 0) {
-      alert("Please enter a hex address.");
-      return;
+    /* 1 — recover hexagon seed */
+    const hexagonSeed = unscramble(fromBase36(hexPure));
+
+    /* 2 — read coordinate inputs (defaults 0) */
+    const w = +document.getElementById("browseWall").value   || 0;
+    const s = +document.getElementById("browseShelf").value  || 0;
+    const v = +document.getElementById("browseVolume").value || 0;
+    const p = +document.getElementById("browsePage").value   || 0;
+
+    /* 3 — page seed = hexagon seed + coord number */
+    const coordNumber = coordsToNumber(w, s, v, p);
+    const pageSeed    = hexagonSeed + coordNumber;
+
+    /* 4 - if a snippet was provided in the URL, splice it back in */
+    let pageArr = generateGibberish(pageSeed);
+    if (window.__injectedSnippet) {
+      const { text, pos } = window.__injectedSnippet;
+      for (let i = 0; i < text.length && pos + i < 3200; i++) {
+        pageArr[pos + i] = text[i];
+      }
+      delete window.__injectedSnippet;   // use once
     }
 
-    const expectedPos = encodePosition(wall, shelf, volume, page);
-    const scrambled = fromBase36(hex);
-    const combined = reversibleLcgUnscramble(scrambled);
+    /* 5 — render (hexagon never changes) */
+    renderPage(hexPure, w, s, v, p, pageArr);
 
-    const actualPos = combined / POSITION_MULTIPLIER;
-    const pageNumber = combined % POSITION_MULTIPLIER;
-
-    if (actualPos !== expectedPos) {
-      alert("Position mismatch! The hex doesn't match the given coordinates.");
-      return;
-    }
-
-    const text = numberToPage(pageNumber);
-
-    document.getElementById("hex").textContent = hex;
-    document.getElementById("coords").textContent = `Wall: ${wall}, Shelf: ${shelf}, Volume: ${volume}, Page: ${page}`;
-    const posEl = document.getElementById("pos");
-    if (posEl) posEl.style.display = "none";
-        document.getElementById("page").textContent = text.join("");
-    } catch (e) {
-        console.error("Browse failed:", e);
-    }
+  } catch (err) {
+    console.error("Browse failed:", err);
+  }
 }
 
-function copyHex() {
-  const hex = document.getElementById("hex").textContent;
-  if (!hex) return;
-
-  navigator.clipboard.writeText(hex).then(() => {
-    const status = document.getElementById("copyStatus");
-    status.style.display = "inline";
-    setTimeout(() => (status.style.display = "none"), 1500);
+/* ───────────────────── Copy helpers ───────────────────── */
+function copyHex(id, statusId) {
+  const txt = document.getElementById("hex").textContent;
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const s = document.getElementById("copyStatus");
+    s.style.display="inline"; setTimeout(()=>s.style.display="none",1500);
   });
 }
 
 function copyLink() {
-  const hex = document.getElementById("hex").textContent;
-  const coordsText = document.getElementById("coords").textContent;
-  if (!hex || !coordsText.includes("Wall")) return;
+  const hexOnly = document.getElementById("hex").textContent.trim();
+  if (!hexOnly) return;
 
-  const matches = coordsText.match(/Wall: (\d+), Shelf: (\d+), Volume: (\d+), Page: (\d+)/);
-  if (!matches) return;
+  /* coordinates */
+  let w, s, v, p;
+  if (document.getElementById("browseWall")) {
+    w = document.getElementById("browseWall").value || 0;
+    s = document.getElementById("browseShelf").value || 0;
+    v = document.getElementById("browseVolume").value || 0;
+    p = document.getElementById("browsePage").value  || 0;
+  } else {
+    const m = document.getElementById("coords")
+              .textContent.match(/Wall:\s*(\d+),\s*Shelf:\s*(\d+),\s*Volume:\s*(\d+),\s*Page:\s*(\d+)/);
+    if (!m) return;
+    [, w, s, v, p] = m;
+  }
 
-  const [, wall, shelf, volume, page] = matches;
-  const hash = `hex=${encodeURIComponent(hex)}&wall=${wall}&shelf=${shelf}&volume=${volume}&page=${page}`;
-  const url = `${location.origin}${location.pathname.replace("search.html", "browse.html")}#${hash}`;
+  /* snippet + position only exist on search.html */
+  let snippetBlock = "";
+  if (document.getElementById("pos")) {
+    const pos = document.getElementById("pos").textContent.trim();
+    const snippet = document.getElementById("snippet").value;
+    snippetBlock = `#${pos}$${encodeURIComponent(snippet)}`;
+  }
+
+  const share = `${hexOnly}#${w}-${s}-${v}-${p}${snippetBlock}`;
+  const url   = `${location.origin}/browse.html#${encodeURIComponent(share)}`;
 
   navigator.clipboard.writeText(url).then(() => {
-    const status = document.getElementById("linkStatus");
-    status.style.display = "inline";
-    setTimeout(() => (status.style.display = "none"), 1500);
+    const badge = document.getElementById("linkStatus");
+    badge.style.display = "inline";
+    setTimeout(() => (badge.style.display = "none"), 1500);
   });
 }
 
-// Load and decode from URL hash if it contains position + hex
+/* ─── Auto‑load from URL (hex#coords or just hex) ─── */
 function tryAutoloadFromHash() {
-  if (!location.hash.startsWith("#hex=")) return;
+  if (!location.hash) return;
 
-  const hash = decodeURIComponent(location.hash.slice(1));
-  const params = new URLSearchParams(hash);
+  const raw = decodeURIComponent(location.hash.slice(1)); // hex#coords#pos$snippet
+  const [hexPart, coordPart = "", snippetPart = ""] = raw.split("#");
 
-  const hex = params.get("hex");
-  const wall = parseInt(params.get("wall"));
-  const shelf = parseInt(params.get("shelf"));
-  const volume = parseInt(params.get("volume"));
-  const page = parseInt(params.get("page"));
+  /* place hexagon */
+  const hexField = document.getElementById("browseHex");
+  if (!hexField) return;
+  hexField.value = hexPart;
 
-  if (hex && !isNaN(wall) && !isNaN(shelf) && !isNaN(volume) && !isNaN(page)) {
-    const hexInput = document.getElementById("browseHex");
-    const wallInput = document.getElementById("browseWall");
-    const shelfInput = document.getElementById("browseShelf");
-    const volumeInput = document.getElementById("browseVolume");
-    const pageInput = document.getElementById("browsePage");
-    
-    if (hexInput && wallInput && shelfInput && volumeInput && pageInput) {
-      hexInput.value = hex;
-      wallInput.value = wall;
-      shelfInput.value = shelf;
-      volumeInput.value = volume;
-      pageInput.value = page;
-      browseBabel();
-    }
+  /* coords */
+  if (coordPart) {
+    const [w, s, v, p] = coordPart.split("-").map(Number);
+    document.getElementById("browseWall").value   = w;
+    document.getElementById("browseShelf").value  = s;
+    document.getElementById("browseVolume").value = v;
+    document.getElementById("browsePage").value   = p;
   }
+
+  /* snippet & position */
+  if (snippetPart.includes("$")) {
+    const [pos, encoded] = snippetPart.split("$");
+    window.__injectedSnippet = {
+      text: decodeURIComponent(encoded),
+      pos:  +pos
+    };
+  }
+
+  browseBabel();
 }
 
-// Hook up UI event listeners on DOM load
+/* ─────────── UI wiring ─────────── */
 document.addEventListener("DOMContentLoaded", () => {
-    const searchBtn = document.getElementById("searchBtn");
-    const browseBtn = document.getElementById("browseBtn");
-    const copyHexBtn = document.getElementById("copyHexBtn");
-    const linkBtn = document.getElementById("linkBtn");
-  
-    if (searchBtn) searchBtn.addEventListener("click", searchBabel);
-    if (browseBtn) browseBtn.addEventListener("click", browseBabel);
-    if (copyHexBtn) copyHexBtn.addEventListener("click", copyHex);
-    if (linkBtn) linkBtn.addEventListener("click", copyLink);
-  
-    tryAutoloadFromHash();
-    window.addEventListener("hashchange", tryAutoloadFromHash);
-  });
+  const $ = id => document.getElementById(id);
+  $("searchBtn")?.addEventListener("click", searchBabel);
+  $("browseBtn")?.addEventListener("click", browseBabel);
+  $("copyHexBtn")?.addEventListener("click", copyHex);
+  $("linkBtn")?.addEventListener("click", copyLink);
+
+  tryAutoloadFromHash();
+  window.addEventListener("hashchange", tryAutoloadFromHash);
+});
