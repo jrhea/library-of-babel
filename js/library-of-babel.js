@@ -204,7 +204,8 @@ function copyLink() {
   }
 
   const share = `${hexOnly}#${w}-${s}-${v}-${p}${snippetBlock}`;
-  const url = `${location.origin}/browse.html#${share}`;
+  const base = location.origin + location.pathname.replace(/\/[^/]*$/, "/browse.html");
+  const url = `${base}#${share}`;
 
   navigator.clipboard.writeText(url).then(() => {
     const badge = document.getElementById("linkStatus");
